@@ -14,7 +14,12 @@ const DeviceSchema = new mongoose.Schema({
         required: true,
         default: 0
     },
-    tankLevel:{
+    isRaining:{
+        type: Boolean,
+        required: true,
+        default: false
+    },
+    temperature:{
         type: Number,
         required: true,
         default: 0
@@ -24,7 +29,7 @@ const DeviceSchema = new mongoose.Schema({
         required: true,
         default: 0
     },
-    temperature:{
+    tankLevel:{
         type: Number,
         required: true,
         default: 0
@@ -33,11 +38,6 @@ const DeviceSchema = new mongoose.Schema({
         type: Number,
         required: true,
         default: 0
-    },
-    isRaining:{
-        type: Boolean,
-        required: true,
-        default: false
     }
 });
 

@@ -1,45 +1,10 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 import { View, Text, FlatList, SafeAreaView, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-// Optional: If you want icons, install 'expo install @expo/vector-icons'
 import { MaterialCommunityIcons } from '@expo/vector-icons'; 
+import axiosInstance from '../axiosConfig.js';
 
-// --- DUMMY DATA (Your typical API response) ---
-const devices = [
-  {
-    id: 'D001',
-    name: 'Main Farm Plot 1',
-    status: 'Operational',
-    location: 'North Zone',
-    readings: { humidity: 55, temperature: 28, tankLevel: 75, soilMoisture: 450 },
-  },
-  {
-    id: 'D002',
-    name: 'Greenhouse Section A',
-    status: 'Low Battery',
-    location: 'Greenhouse',
-    readings: { humidity: 78, temperature: 25, tankLevel: 20, soilMoisture: 800 },
-  },
-  {
-    id: 'D003',
-    name: 'Test Bed Unit',
-    status: 'Offline',
-    location: 'R&D Lab',
-    readings: { humidity: 30, temperature: 35, tankLevel: 99, soilMoisture: 100 },
-  },
-  {
-    id: 'D004',
-    name: 'South Field Array',
-    status: 'Operational',
-    location: 'South Zone',
-    readings: { humidity: 60, temperature: 30, tankLevel: 50, soilMoisture: 620 },
-  },
-];
-// ------------------------------------
 
-/**
- * Helper function to determine the color of the status badge.
- */
 const getStatusStyles = (status) => {
   switch (status) {
     case 'Operational': return 'bg-green-100 text-green-700 border-green-300';
@@ -68,7 +33,13 @@ const MetricCard = ({ title, value, unit, iconName, color }) => (
  * Device Card Component
  */
 const DeviceCard = ({ device }) => {
-  const { name, status, location, readings } = device;
+  console.log(JSON.stringify(device));
+  const tankLevel = device.tankLevel;
+  const humidity=device.humidity;
+  const isOnline=device.isOnline;
+  const temperature = device.temperature;
+  const soilMoisture=device.soilMoisture;
+  const deviceID=device.deviceID;
   const statusClasses = getStatusStyles(status);
 
   return (
@@ -80,11 +51,9 @@ const DeviceCard = ({ device }) => {
       {/* Header and Status */}
       <View className="flex-row justify-between items-start pb-3 mb-3 border-b border-gray-100">
         <View className="flex-shrink">
-          <Text className="text-xl font-extrabold text-gray-900">{name}</Text>
-          <Text className="text-sm text-gray-500 mt-1">{location}</Text>
+          <Text className="text-xl font-extrabold text-gray-900">{deviceID}</Text>
         </View>
         <View className={`px-3 py-1 rounded-full border ${statusClasses}`}>
-          <Text className="text-xs font-semibold">{status}</Text>
         </View>
       </View>
 
@@ -92,28 +61,28 @@ const DeviceCard = ({ device }) => {
       <View className="flex-row flex-wrap -m-2">
         <MetricCard 
           title="Humidity" 
-          value={readings.humidity} 
+          value={humidity} 
           unit="%" 
           iconName="water-percent" 
           color="bg-blue-50" 
         />
         <MetricCard 
           title="Temperature" 
-          value={readings.temperature} 
+          value={temperature} 
           unit="°C" 
           iconName="temperature-celsius" 
           color="bg-red-50" 
         />
         <MetricCard 
           title="Tank Level" 
-          value={readings.tankLevel} 
+          value={tankLevel} 
           unit="%" 
           iconName="water-boiler" 
           color="bg-cyan-50" 
         />
         <MetricCard 
           title="Soil Moisture" 
-          value={readings.soilMoisture} 
+          value={soilMoisture} 
           unit=" raw" 
           iconName="spa" 
           color="bg-amber-50" 
@@ -128,7 +97,27 @@ const DeviceCard = ({ device }) => {
  * Main Dashboard Component (The entire screen)
  */
 const IrrigationDashboard = () => {
+  const [data, setData] = useState([]);
   
+  useEffect(()=>{
+    const func=async()=>{
+      try{
+        const response = await axiosInstance.get("/device/get");
+        if(!response.data.success){
+            console.log(JSON.stringify(response.data.message));
+            setData([]);
+        }else{
+            setData(response.data.data);
+            console.log(JSON.stringify(response.data));
+        }
+      }catch(error){
+        console.error("Data retrieval error:", error.message);
+      }
+    }
+
+    func();
+  },[]);
+
   const Header = () => (
     <View className="p-4 bg-white shadow-sm border-b border-gray-100">
       <Text className="text-3xl font-extrabold text-green-700">Dashboard</Text>
@@ -144,12 +133,12 @@ const IrrigationDashboard = () => {
       <Header />
 
       {/* FlatList for efficient, scrollable list of devices */}
-      <FlatList
-        data={devices}
-        keyExtractor={(item) => item.id}
+      {data !== null && <FlatList
+        data={data}
+        keyExtractor={(item) => item._id.toString()}
         renderItem={({ item }) => <DeviceCard device={item} />}
         contentContainerStyle={{ paddingBottom: 16 }} // Space at the bottom
-      />
+      />} 
     </SafeAreaView>
   );
 };
